@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import './navBar.css';
 import { useAuth } from '../authContext/authContext.js'; // Import useAuth hook
 
 const NavBar = () => {
     const { currentUser, logout } = useAuth(); // Get current user and logout function
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -14,9 +15,18 @@ const NavBar = () => {
         }
     };
 
+    const toggleMenu = () => {
+        setIsMenuOpen((prev) => !prev);
+    };
+
     return (
         <nav className="navbar">
-            <ul className="navList">
+            <div className="hamburger" onClick={toggleMenu}>
+                <div style={{ height: '4px', width: '30px', background: 'white', margin: '3px 0' }}></div>
+                <div style={{ height: '4px', width: '30px', background: 'white', margin: '3px 0' }}></div>
+                <div style={{ height: '4px', width: '30px', background: 'white', margin: '3px 0' }}></div>
+            </div>
+            <ul className={`navList ${isMenuOpen ? 'show' : 'hidden'}`}>
                 <li className="navItem">
                     <NavLink to="/" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
                         Home
