@@ -34,6 +34,11 @@ const NavBar = () => {
                                 Card Color Game
                             </NavLink>
                         </li>
+                        <li className="navItem">
+                            <NavLink to="/baccarat" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
+                                Baccarat
+                            </NavLink>
+                        </li>
                     </>
                 )}
                 {!currentUser ? (

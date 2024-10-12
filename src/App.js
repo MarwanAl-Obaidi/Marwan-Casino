@@ -9,6 +9,7 @@ import SignUp from './views/signUp/signUp.js';
 import Login from './views/logIn/logIn.js';
 import Slots from './views/slots/slots.js';
 import CardColorGame from './views/cardColorGame/cardColorGame.js';
+import Baccarat from './views/baccarat/baccarat.js';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/slots" element={<PrivateRoute><Slots /></PrivateRoute>} />
           <Route path="/cardcolorgame" element={<PrivateRoute><CardColorGame /></PrivateRoute>} />
+          <Route path="/baccarat" element={<PrivateRoute><Baccarat /></PrivateRoute>} />
         </Routes>
       </Router>
     </AuthProvider>
