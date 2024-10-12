@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import './baccarat.css';
+import NavBar from '../../components/navBar/navBar.js';
 
 const Baccarat = () => {
     const [playerHand, setPlayerHand] = useState([]);
@@ -21,7 +23,7 @@ const Baccarat = () => {
         return total % 10; // Last digit of the sum
     };
 
-    // Draws an initial hand twicce
+    // Draws an initial hand twice
     const drawInitialHand = () => [getCard(), getCard()];
 
     // Third card rule for the Player
@@ -93,46 +95,53 @@ const Baccarat = () => {
     };
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>Baccarat Game</h1>
-            <div>
-                <label>
-                    <input
-                        type="radio"
-                        value="Player"
-                        checked={bet === 'Player'}
-                        onChange={() => setBet('Player')}
-                    />
-                    Bet on Player
-                </label>
-                <label>
-                    <input
-                        type="radio"
-                        value="Banker"
-                        checked={bet === 'Banker'}
-                        onChange={() => setBet('Banker')}
-                    />
-                    Bet on Banker
-                </label>
-                <label>
-                    <input
-                        type="radio"
-                        value="Tie"
-                        checked={bet === 'Tie'}
-                        onChange={() => setBet('Tie')}
-                    />
-                    Bet on Tie
-                </label>
+        <div>
+            <NavBar />
+            <div className="baccarat-game-container">
+                <h1 className="baccarat-title">Baccarat Game</h1>
+                <div className="baccarat-bet-container">
+                    <label className={`baccarat-bet-option ${bet === 'Player' ? 'baccarat-selected' : ''}`}>
+                        <input
+                            type="radio"
+                            value="Player"
+                            checked={bet === 'Player'}
+                            onChange={() => setBet('Player')}
+                        />
+                        Bet on Player
+                    </label>
+                    <label className={`baccarat-bet-option ${bet === 'Banker' ? 'baccarat-selected' : ''}`}>
+                        <input
+                            type="radio"
+                            value="Banker"
+                            checked={bet === 'Banker'}
+                            onChange={() => setBet('Banker')}
+                        />
+                        Bet on Banker
+                    </label>
+                    <label className={`baccarat-bet-option ${bet === 'Tie' ? 'baccarat-selected' : ''}`}>
+                        <input
+                            type="radio"
+                            value="Tie"
+                            checked={bet === 'Tie'}
+                            onChange={() => setBet('Tie')}
+                        />
+                        Bet on Tie
+                    </label>
+                </div>
+                <button className="baccarat-play-button" onClick={playGame}>Play</button>
+                <div className="baccarat-hands-container">
+                    <div className="baccarat-hand">
+                        <h2>Player Hand: {playerHand.join(', ')}</h2>
+                        <h3>Player Score: {playerScore}</h3>
+                    </div>
+                    <div className="baccarat-hand">
+                        <h2>Banker Hand: {bankerHand.join(', ')}</h2>
+                        <h3>Banker Score: {bankerScore}</h3>
+                    </div>
+                </div>
+                {gameResult && <h2 className="baccarat-result">{gameResult}</h2>}
+                {message && <p className="baccarat-message">{message}</p>}
             </div>
-            <button onClick={playGame}>Play</button>
-            <div style={{ marginTop: '20px' }}>
-                <h2>Player Hand: {playerHand.join(', ')}</h2>
-                <h2>Banker Hand: {bankerHand.join(', ')}</h2>
-                <h3>Player Score: {playerScore}</h3>
-                <h3>Banker Score: {bankerScore}</h3>
-            </div>
-            {gameResult && <h2>{gameResult}</h2>}
-            {message && <p>{message}</p>}
         </div>
     );
 };
