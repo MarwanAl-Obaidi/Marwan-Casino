@@ -49,6 +49,12 @@ const Currencies = () => {
             return;
         }
 
+        // Check if the input field is empty
+        if (amount.trim() === '') {
+            alert("Amount cannot be empty. Please enter a valid number.");
+            return; // Stop the function if the input is empty
+        }
+
         const userId = auth.currentUser.uid; // Get the current logged-in user's UID
         const userDocRef = doc(db, 'users', userId); // Reference to the user's document
 
@@ -84,16 +90,26 @@ const Currencies = () => {
         }
     };
 
+    // Validate and prevent entering invalid characters like negatives or decimals
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+
+        // Only allow positive whole numbers
+        if (/^\d*$/.test(value)) {
+            setAmount(value); // Set the value only if it passes the regex check
+        }
+    };
+
     return (
         <div>
             <NavBar />
             <div className="currencies-container">
                 <h2 className="currencies-title">Add Money</h2>
                 <input
-                    type="number"
+                    type="text"
                     className="currencies-input"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={handleInputChange}
                     placeholder="Enter amount"
                 />
                 <button className="currencies-button" onClick={handleAddMoney}>
