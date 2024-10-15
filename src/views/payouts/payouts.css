@@ -1,0 +1,21 @@
+.payouts {
+    padding: 20px;
+    text-align: center;
+}
+
+.payouts-table {
+    width: 60%;
+    margin: 0 auto;
+    border-collapse: collapse;
+}
+
+.payouts-table th,
+.payouts-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.payouts-table th {
+    background-color: #f4f4f4;
+}
