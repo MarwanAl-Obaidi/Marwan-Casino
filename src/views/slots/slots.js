@@ -7,7 +7,15 @@ import NavBar from '../../components/navBar/navBar.js';
 const Slots = () => {
     const slotItems = ['🍒', '🍋', '🍊', '🍇', '🍉'];
     const spinCost = 10; // Cost of each spin
-    const winReward = 50; // Reward for winning
+
+    // Updated payout table including two-of-a-kind rewards
+    const winRewards = {
+        '🍒': { three: 100, two: 20 }, // Triple Cherries, Double Cherries
+        '🍋': { three: 80, two: 16 },  // Triple Lemons, Double Lemons
+        '🍊': { three: 70, two: 14 },  // Triple Oranges, Double Oranges
+        '🍇': { three: 50, two: 10 },  // Triple Grapes, Double Grapes
+        '🍉': { three: 50, two: 10 },  // Triple Watermelon, Double Watermelon
+    };
 
     const [slots, setSlots] = useState(['🍒', '🍒', '🍒']);
     const [message, setMessage] = useState('');
@@ -129,12 +137,11 @@ const Slots = () => {
                 return updatedSlots;
             });
 
-            // Check if all slots match for a jackpot
-            if (finalSlots.every(slot => slot === finalSlots[0])) {
-                setMessage('🎉 Jackpot! You won! 🎉');
-
-                // Add the win reward to user's money
-                const updatedMoney = newMoney + winReward;
+            // Determine win based on final symbols
+            const winAmount = determineWin(finalSlots);
+            if (winAmount > 0) {
+                setMessage(`🎉 You won ${winAmount}! 🎉`);
+                const updatedMoney = newMoney + winAmount;
                 setUserMoney(updatedMoney); // Update local state
 
                 // Update user's money in Firestore
@@ -151,6 +158,27 @@ const Slots = () => {
 
             setSpinning(false);
         }, 2000);
+    };
+
+    // Function to determine win based on the final slots
+    const determineWin = (slots) => {
+        const counts = {};
+        slots.forEach(slot => {
+            counts[slot] = (counts[slot] || 0) + 1;
+        });
+
+        const uniqueSlots = Object.keys(counts);
+
+        // Check for three-of-a-kind first
+        for (const slot of uniqueSlots) {
+            if (counts[slot] === 3) {
+                return winRewards[slot].three; // Return three-of-a-kind reward
+            } else if (counts[slot] === 2) {
+                return winRewards[slot].two; // Return two-of-a-kind reward
+            }
+        }
+
+        return 0; // No win
     };
 
     return (
