@@ -39,3 +39,22 @@
 .currencies-button:hover {
     background-color: #45a049;
 }
+
+.currencies-list {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    background-color: #fff;
+}
+
+.currencies-list-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.currencies-item {
+    font-size: 18px;
+    color: #333;
+}
