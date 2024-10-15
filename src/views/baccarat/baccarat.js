@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './baccarat.css';
 import NavBar from '../../components/navBar/navBar.js';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const Baccarat = () => {
     const [playerHand, setPlayerHand] = useState([]);
@@ -9,7 +11,34 @@ const Baccarat = () => {
     const [bankerScore, setBankerScore] = useState(0);
     const [gameResult, setGameResult] = useState('');
     const [bet, setBet] = useState(''); // 'Player', 'Banker', or 'Tie'
+    const [betAmount, setBetAmount] = useState(1); // Default bet amount
     const [message, setMessage] = useState('');
+    const [userMoney, setUserMoney] = useState(null); // User's money state
+
+    const auth = getAuth();
+    const db = getFirestore();
+
+    // Fetch user money from Firestore
+    const fetchUserMoney = useCallback(async () => {
+        if (!auth.currentUser) return;
+
+        const userId = auth.currentUser.uid;
+        const userDocRef = doc(db, 'users', userId);
+
+        try {
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                setUserMoney(userData.currencies.money || 0);
+            }
+        } catch (error) {
+            console.error("Error fetching user money: ", error);
+        }
+    }, [auth, db]);
+
+    useEffect(() => {
+        fetchUserMoney();
+    }, [fetchUserMoney]);
 
     // Card deck
     const getCard = () => {
@@ -39,15 +68,34 @@ const Baccarat = () => {
         return false;
     };
 
-    const playGame = () => {
+    const playGame = async () => {
         if (!bet) {
             setMessage('Please place a bet on Player, Banker, or Tie.');
+            return;
+        }
+        if (userMoney === null || userMoney < betAmount) {
+            setMessage('Not enough money to place this bet.');
             return;
         }
 
         // Reset message and game result
         setMessage('');
         setGameResult('');
+
+        // Deduct the bet amount from user's money
+        const newMoney = userMoney - betAmount;
+        setUserMoney(newMoney);
+
+        // Update user's money in Firestore
+        const userId = auth.currentUser.uid;
+        const userDocRef = doc(db, 'users', userId);
+        try {
+            await updateDoc(userDocRef, {
+                'currencies.money': newMoney
+            });
+        } catch (error) {
+            console.error("Error updating user money: ", error);
+        }
 
         // Deal initial hands
         const initialPlayerHand = drawInitialHand();
@@ -79,18 +127,45 @@ const Baccarat = () => {
         setBankerScore(bankerTotal);
 
         // Determine the game result
+        let winnings = 0;
         if (playerTotal > bankerTotal) {
             setGameResult('Player wins!');
-            if (bet === 'Player') setMessage('You win the bet!');
-            else setMessage('You lose the bet!');
+            if (bet === 'Player') {
+                winnings = betAmount * 1; // Payout 1 to 1 for Player
+                setMessage(`You win the bet! Winnings: ${winnings}`);
+                setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
+            } else {
+                setMessage('You lose the bet!');
+            }
         } else if (bankerTotal > playerTotal) {
             setGameResult('Banker wins!');
-            if (bet === 'Banker') setMessage('You win the bet!');
-            else setMessage('You lose the bet!');
+            if (bet === 'Banker') {
+                winnings = betAmount * 1; // Payout 1 to 1 for Banker
+                const commission = winnings * 0.05; // 5% commission
+                winnings = winnings - commission;
+                setMessage(`You win the bet! Winnings: ${winnings} (after 5% commission)`);
+                setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
+            } else {
+                setMessage('You lose the bet!');
+            }
         } else {
             setGameResult('It\'s a Tie!');
-            if (bet === 'Tie') setMessage('You win the bet!');
-            else setMessage('You lose the bet!');
+            if (bet === 'Tie') {
+                winnings = betAmount * 8; // Payout 8 to 1 for Tie
+                setMessage(`You win the bet! Winnings: ${winnings}`);
+                setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
+            } else {
+                setMessage('You lose the bet!');
+            }
+        }
+
+        // Update user's money in Firestore after determining winnings
+        try {
+            await updateDoc(userDocRef, {
+                'currencies.money': newMoney + winnings + betAmount
+            });
+        } catch (error) {
+            console.error("Error updating user money after winnings: ", error);
         }
     };
 
@@ -99,35 +174,70 @@ const Baccarat = () => {
             <NavBar />
             <div className="baccarat-game-container">
                 <h1 className="baccarat-title">Baccarat Game</h1>
-                <div className="baccarat-bet-container">
-                    <label className={`baccarat-bet-option ${bet === 'Player' ? 'baccarat-selected' : ''}`}>
-                        <input
-                            type="radio"
-                            value="Player"
-                            checked={bet === 'Player'}
-                            onChange={() => setBet('Player')}
-                        />
-                        Bet on Player
-                    </label>
-                    <label className={`baccarat-bet-option ${bet === 'Banker' ? 'baccarat-selected' : ''}`}>
-                        <input
-                            type="radio"
-                            value="Banker"
-                            checked={bet === 'Banker'}
-                            onChange={() => setBet('Banker')}
-                        />
-                        Bet on Banker
-                    </label>
-                    <label className={`baccarat-bet-option ${bet === 'Tie' ? 'baccarat-selected' : ''}`}>
-                        <input
-                            type="radio"
-                            value="Tie"
-                            checked={bet === 'Tie'}
-                            onChange={() => setBet('Tie')}
-                        />
-                        Bet on Tie
-                    </label>
+                <div className='baccarat-bet-container-wrapper'>
+                    <div className="baccarat-bet-container">
+                        <label className={`baccarat-bet-option ${bet === 'Player' ? 'baccarat-selected' : ''}`}>
+                            <input
+                                type="radio"
+                                value="Player"
+                                checked={bet === 'Player'}
+                                onChange={() => setBet('Player')}
+                            />
+                            Bet on Player
+                        </label>
+                        <label className={`baccarat-bet-option ${bet === 'Banker' ? 'baccarat-selected' : ''}`}>
+                            <input
+                                type="radio"
+                                value="Banker"
+                                checked={bet === 'Banker'}
+                                onChange={() => setBet('Banker')}
+                            />
+                            Bet on Banker
+                        </label>
+                        <label className={`baccarat-bet-option ${bet === 'Tie' ? 'baccarat-selected' : ''}`}>
+                            <input
+                                type="radio"
+                                value="Tie"
+                                checked={bet === 'Tie'}
+                                onChange={() => setBet('Tie')}
+                            />
+                            Bet on Tie
+                        </label>
+                    </div>
+                    <div className="baccarat-bet-container">
+                        <label className='baccarat-bet-option'>
+                            <input
+                                type="radio"
+                                name="betAmount"
+                                value="1"
+                                checked={betAmount === 1}
+                                onChange={() => setBetAmount(1)}
+                            />
+                            Bet 1
+                        </label>
+                        <label className='baccarat-bet-option'>
+                            <input
+                                type="radio"
+                                name="betAmount"
+                                value="5"
+                                checked={betAmount === 5}
+                                onChange={() => setBetAmount(5)}
+                            />
+                            Bet 5
+                        </label>
+                        <label className='baccarat-bet-option'>
+                            <input
+                                type="radio"
+                                name="betAmount"
+                                value="10"
+                                checked={betAmount === 10}
+                                onChange={() => setBetAmount(10)}
+                            />
+                            Bet 10
+                        </label>
+                    </div>
                 </div>
+                {userMoney !== null && <p className="baccarat-user-money">Your Money: {userMoney}</p>}
                 <button className="baccarat-play-button" onClick={playGame}>Play</button>
                 <div className="baccarat-hands-container">
                     <div className="baccarat-hand">
