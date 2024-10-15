@@ -6,9 +6,8 @@ import NavBar from '../../components/navBar/navBar.js';
 
 const Slots = () => {
     const slotItems = ['🍒', '🍋', '🍊', '🍇', '🍉'];
-    const spinCost = 10; // Cost of each spin
 
-    // Updated payout table including two-of-a-kind rewards
+    // Updated payout table with adjusted rewards based on the bet
     const winRewards = {
         '🍒': { three: 100, two: 20 }, // Triple Cherries, Double Cherries
         '🍋': { three: 80, two: 16 },  // Triple Lemons, Double Lemons
@@ -21,6 +20,7 @@ const Slots = () => {
     const [message, setMessage] = useState('');
     const [spinning, setSpinning] = useState(false);
     const [userMoney, setUserMoney] = useState(null); // User's money state
+    const [betAmount, setBetAmount] = useState(10); // Default bet amount
 
     const auth = getAuth();
     const db = getFirestore();
@@ -66,13 +66,13 @@ const Slots = () => {
         }
 
         // Check if the user has enough money to spin
-        if (userMoney < spinCost) {
+        if (userMoney < betAmount) {
             alert("Not enough money to spin.");
             return;
         }
 
         // Deduct the spin cost from user's money
-        const newMoney = userMoney - spinCost;
+        const newMoney = userMoney - betAmount;
         setUserMoney(newMoney); // Update local state
         setSpinning(true);
         setMessage('');
@@ -186,6 +186,38 @@ const Slots = () => {
             <NavBar />
             <div className="slot-machine">
                 <h1>Slot Machine</h1>
+                <div className="bet-options">
+                    <label>
+                        <input
+                            type="radio"
+                            name="bet"
+                            value="1"
+                            checked={betAmount === 1}
+                            onChange={() => setBetAmount(1)}
+                        />
+                        Bet 1 Money
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            name="bet"
+                            value="5"
+                            checked={betAmount === 5}
+                            onChange={() => setBetAmount(5)}
+                        />
+                        Bet 5 Money
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            name="bet"
+                            value="10"
+                            checked={betAmount === 10}
+                            onChange={() => setBetAmount(10)}
+                        />
+                        Bet 10 Money
+                    </label>
+                </div>
                 <div className="slots">
                     {slots.map((slot, index) => (
                         <div key={index} className="slot">
@@ -195,8 +227,8 @@ const Slots = () => {
                 </div>
                 <p className="message">{message || ''}</p>
                 <p className="balance">Current Balance: {userMoney !== null ? userMoney : 'Loading...'}</p>
-                <button className="spin-button" onClick={spinSlots} disabled={spinning || userMoney < spinCost}>
-                    {spinning ? 'Spinning...' : `Spin (-${spinCost} money)`}
+                <button className="spin-button" onClick={spinSlots} disabled={spinning || userMoney < betAmount}>
+                    {spinning ? 'Spinning...' : `Spin (-${betAmount} money)`}
                 </button>
             </div>
         </div>
