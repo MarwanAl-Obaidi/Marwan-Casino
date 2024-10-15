@@ -8,6 +8,7 @@ import Home from './views/home/home';
 import SignUp from './views/signUp/signUp.js';
 import Login from './views/logIn/logIn.js';
 import Currencies from './views/currencies/currencies.js';
+import Payouts from './views/payouts/payouts.js';
 import Slots from './views/slots/slots.js';
 import CardColorGame from './views/cardColorGame/cardColorGame.js';
 import Baccarat from './views/baccarat/baccarat.js';
@@ -22,6 +23,7 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
           <Route path="/currencies" element={<PrivateRoute><Currencies /></PrivateRoute>} />
+          <Route path="/payouts" element={<PrivateRoute><Payouts /></PrivateRoute>} />
           <Route path="/slots" element={<PrivateRoute><Slots /></PrivateRoute>} />
           <Route path="/cardcolorgame" element={<PrivateRoute><CardColorGame /></PrivateRoute>} />
           <Route path="/baccarat" element={<PrivateRoute><Baccarat /></PrivateRoute>} />

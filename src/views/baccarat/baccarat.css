@@ -24,6 +24,12 @@
     margin-bottom: 20px;
 }
 
+.baccarat-bet-container-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
 .baccarat-bet-option {
     margin: 10px 0;
     font-size: 1.2em;

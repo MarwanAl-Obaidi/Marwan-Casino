@@ -54,6 +54,11 @@ const NavBar = () => {
                                 Currencies
                             </NavLink>
                         </li>
+                        <li className="navItem">
+                            <NavLink to="/payouts" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
+                                Payouts
+                            </NavLink>
+                        </li>
                     </>
                 )}
                 {!currentUser ? (
