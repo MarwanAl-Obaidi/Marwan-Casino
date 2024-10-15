@@ -1,20 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './slots.css';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import NavBar from '../../components/navBar/navBar.js';
 
 const Slots = () => {
     const slotItems = ['🍒', '🍋', '🍊', '🍇', '🍉'];
+    const spinCost = 10; // Cost of each spin
+    const winReward = 50; // Reward for winning
+
     const [slots, setSlots] = useState(['🍒', '🍒', '🍒']);
     const [message, setMessage] = useState('');
     const [spinning, setSpinning] = useState(false);
+    const [userMoney, setUserMoney] = useState(null); // User's money state
 
-    const spinSlots = () => {
+    const auth = getAuth();
+    const db = getFirestore();
+
+    // Function to fetch user money
+    const fetchUserMoney = useCallback(async () => {
+        if (!auth.currentUser) {
+            console.log("User is not logged in");
+            return;
+        }
+
+        const userId = auth.currentUser.uid; // Get the current logged-in user's UID
+        const userDocRef = doc(db, 'users', userId); // Reference to the user's document
+
+        try {
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.currencies && userData.currencies.money !== undefined) {
+                    setUserMoney(userData.currencies.money); // Set user money state
+                } else {
+                    setUserMoney(0); // Default to 0 if no money exists
+                }
+            } else {
+                console.log("User document does not exist");
+            }
+        } catch (error) {
+            console.error("Error fetching money: ", error);
+        }
+    }, [auth, db]);
+
+    // Effect to fetch user's money when component mounts
+    useEffect(() => {
+        fetchUserMoney();
+    }, [fetchUserMoney]);
+
+    const spinSlots = async () => {
         if (spinning) return;
+
+        if (userMoney === null) {
+            alert("Loading user balance, please wait.");
+            return;
+        }
+
+        // Check if the user has enough money to spin
+        if (userMoney < spinCost) {
+            alert("Not enough money to spin.");
+            return;
+        }
+
+        // Deduct the spin cost from user's money
+        const newMoney = userMoney - spinCost;
+        setUserMoney(newMoney); // Update local state
         setSpinning(true);
         setMessage('');
 
-        const finalSlots = [];
+        const userId = auth.currentUser.uid; // Get user UID
+        const userDocRef = doc(db, 'users', userId);
 
+        // Update user's money in Firestore
+        try {
+            await updateDoc(userDocRef, {
+                'currencies.money': newMoney
+            });
+        } catch (error) {
+            console.error("Error updating money: ", error);
+            return;
+        }
+
+        const finalSlots = [];
         const getRandomSlot = () => slotItems[Math.floor(Math.random() * slotItems.length)];
 
         const spinIntervals = [null, null, null];
@@ -51,7 +119,7 @@ const Slots = () => {
             });
         }, 1500);
 
-        setTimeout(() => {
+        setTimeout(async () => {
             clearInterval(spinIntervals[2]);
             const finalSymbol3 = getRandomSlot();
             finalSlots.push(finalSymbol3);
@@ -61,8 +129,22 @@ const Slots = () => {
                 return updatedSlots;
             });
 
+            // Check if all slots match for a jackpot
             if (finalSlots.every(slot => slot === finalSlots[0])) {
                 setMessage('🎉 Jackpot! You won! 🎉');
+
+                // Add the win reward to user's money
+                const updatedMoney = newMoney + winReward;
+                setUserMoney(updatedMoney); // Update local state
+
+                // Update user's money in Firestore
+                try {
+                    await updateDoc(userDocRef, {
+                        'currencies.money': updatedMoney
+                    });
+                } catch (error) {
+                    console.error("Error updating money after win: ", error);
+                }
             } else {
                 setMessage('Try Again!');
             }
@@ -84,8 +166,9 @@ const Slots = () => {
                     ))}
                 </div>
                 <p className="message">{message || ''}</p>
-                <button className="spin-button" onClick={spinSlots} disabled={spinning}>
-                    {spinning ? 'Spinning...' : 'Spin'}
+                <p className="balance">Current Balance: {userMoney !== null ? userMoney : 'Loading...'}</p>
+                <button className="spin-button" onClick={spinSlots} disabled={spinning || userMoney < spinCost}>
+                    {spinning ? 'Spinning...' : `Spin (-${spinCost} money)`}
                 </button>
             </div>
         </div>
