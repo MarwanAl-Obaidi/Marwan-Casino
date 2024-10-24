@@ -146,9 +146,7 @@ const Baccarat = () => {
             setGameResult('Banker wins!');
             if (bet === 'Banker') {
                 winnings = betAmount * 1; // Payout 1 to 1 for Banker
-                const commission = winnings * 0.05; // 5% commission
-                winnings = winnings - commission;
-                setMessage(`You win the bet! Winnings: ${winnings} (after 5% commission)`);
+                setMessage(`You win the bet! Winnings: ${winnings}`);
                 setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
                 experienceGain = 50; // Gain more experience for winning
             } else {

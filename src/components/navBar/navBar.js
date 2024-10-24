@@ -34,11 +34,7 @@ const NavBar = () => {
                 </li>
                 {currentUser && (
                     <>
-                        <li className="navItem">
-                            <NavLink to="/profile" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
-                                Profile
-                            </NavLink>
-                        </li>
+                    ︱
                         <li className="navItem">
                             <NavLink to="/slots" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
                                 Slots
@@ -52,6 +48,12 @@ const NavBar = () => {
                         <li className="navItem">
                             <NavLink to="/baccarat" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
                                 Baccarat
+                            </NavLink>
+                        </li>
+                        ︱
+                        <li className="navItem">
+                            <NavLink to="/profile" className={({ isActive }) => (isActive ? "activeNavLink" : "navLink")}>
+                                Profile
                             </NavLink>
                         </li>
                         <li className="navItem">
