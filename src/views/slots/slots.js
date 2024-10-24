@@ -20,42 +20,40 @@ const Slots = () => {
     const [message, setMessage] = useState('');
     const [spinning, setSpinning] = useState(false);
     const [userMoney, setUserMoney] = useState(null); // User's money state
+    const [userExperience, setUserExperience] = useState(null); // User's experience state
     const [betAmount, setBetAmount] = useState(10); // Default bet amount
 
     const auth = getAuth();
     const db = getFirestore();
 
-    // Function to fetch user money
-    const fetchUserMoney = useCallback(async () => {
+    // Fetch user data (money and experience)
+    const fetchUserData = useCallback(async () => {
         if (!auth.currentUser) {
             console.log("User is not logged in");
             return;
         }
 
-        const userId = auth.currentUser.uid; // Get the current logged-in user's UID
-        const userDocRef = doc(db, 'users', userId); // Reference to the user's document
+        const userId = auth.currentUser.uid;
+        const userDocRef = doc(db, 'users', userId);
 
         try {
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                if (userData.currencies && userData.currencies.money !== undefined) {
-                    setUserMoney(userData.currencies.money); // Set user money state
-                } else {
-                    setUserMoney(0); // Default to 0 if no money exists
-                }
+                setUserMoney(userData.currencies?.money ?? 0);
+                setUserExperience(userData.experience ?? 0); // Fetch experience or default to 0
             } else {
                 console.log("User document does not exist");
             }
         } catch (error) {
-            console.error("Error fetching money: ", error);
+            console.error("Error fetching user data: ", error);
         }
     }, [auth, db]);
 
-    // Effect to fetch user's money when component mounts
+    // Fetch data on component mount
     useEffect(() => {
-        fetchUserMoney();
-    }, [fetchUserMoney]);
+        fetchUserData();
+    }, [fetchUserData]);
 
     const spinSlots = async () => {
         if (spinning) return;
@@ -139,6 +137,8 @@ const Slots = () => {
 
             // Determine win based on final symbols
             const winAmount = determineWin(finalSlots);
+            let experienceGain = 10; // Default experience gain for losing
+
             if (winAmount > 0) {
                 setMessage(`🎉 You won ${winAmount}! 🎉`);
                 const updatedMoney = newMoney + winAmount;
@@ -152,8 +152,22 @@ const Slots = () => {
                 } catch (error) {
                     console.error("Error updating money after win: ", error);
                 }
+
+                experienceGain = 50; // Experience gain for winning
             } else {
                 setMessage('Try Again!');
+            }
+
+            // Update user's experience
+            const updatedExperience = userExperience + experienceGain;
+            setUserExperience(updatedExperience);
+
+            try {
+                await updateDoc(userDocRef, {
+                    experience: updatedExperience // Update experience in Firestore
+                });
+            } catch (error) {
+                console.error("Error updating experience: ", error);
             }
 
             setSpinning(false);

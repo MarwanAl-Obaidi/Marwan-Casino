@@ -14,12 +14,13 @@ const Baccarat = () => {
     const [betAmount, setBetAmount] = useState(1); // Default bet amount
     const [message, setMessage] = useState('');
     const [userMoney, setUserMoney] = useState(null); // User's money state
+    const [userExperience, setUserExperience] = useState(null); // User's experience state
 
     const auth = getAuth();
     const db = getFirestore();
 
-    // Fetch user money from Firestore
-    const fetchUserMoney = useCallback(async () => {
+    // Fetch user money and experience from Firestore
+    const fetchUserData = useCallback(async () => {
         if (!auth.currentUser) return;
 
         const userId = auth.currentUser.uid;
@@ -30,15 +31,16 @@ const Baccarat = () => {
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 setUserMoney(userData.currencies.money || 0);
+                setUserExperience(userData.experience || 0); // Fetch experience or default to 0
             }
         } catch (error) {
-            console.error("Error fetching user money: ", error);
+            console.error("Error fetching user data: ", error);
         }
     }, [auth, db]);
 
     useEffect(() => {
-        fetchUserMoney();
-    }, [fetchUserMoney]);
+        fetchUserData();
+    }, [fetchUserData]);
 
     // Card deck
     const getCard = () => {
@@ -128,12 +130,15 @@ const Baccarat = () => {
 
         // Determine the game result
         let winnings = 0;
+        let experienceGain = 10; // Default experience gain for loss
+
         if (playerTotal > bankerTotal) {
             setGameResult('Player wins!');
             if (bet === 'Player') {
                 winnings = betAmount * 1; // Payout 1 to 1 for Player
                 setMessage(`You win the bet! Winnings: ${winnings}`);
                 setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
+                experienceGain = 50; // Gain more experience for winning
             } else {
                 setMessage('You lose the bet!');
             }
@@ -145,6 +150,7 @@ const Baccarat = () => {
                 winnings = winnings - commission;
                 setMessage(`You win the bet! Winnings: ${winnings} (after 5% commission)`);
                 setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
+                experienceGain = 50; // Gain more experience for winning
             } else {
                 setMessage('You lose the bet!');
             }
@@ -154,18 +160,24 @@ const Baccarat = () => {
                 winnings = betAmount * 8; // Payout 8 to 1 for Tie
                 setMessage(`You win the bet! Winnings: ${winnings}`);
                 setUserMoney(newMoney + winnings + betAmount); // Add winnings and bet back to the user's money
+                experienceGain = 50; // Gain more experience for winning
             } else {
                 setMessage('You lose the bet!');
             }
         }
 
-        // Update user's money in Firestore after determining winnings
+        // Update user's experience
+        const updatedExperience = userExperience + experienceGain;
+        setUserExperience(updatedExperience);
+
+        // Update user's experience and money in Firestore after determining winnings
         try {
             await updateDoc(userDocRef, {
-                'currencies.money': newMoney + winnings + betAmount
+                'currencies.money': newMoney + winnings + betAmount,
+                experience: updatedExperience // Update experience in Firestore
             });
         } catch (error) {
-            console.error("Error updating user money after winnings: ", error);
+            console.error("Error updating user data after winnings: ", error);
         }
     };
 
