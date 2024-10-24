@@ -93,6 +93,10 @@ const Profile = () => {
         })
         : "N/A";
 
+    // Use default values if currency or experience is missing
+    const money = userData.currencies?.money || 0; // Default to 0 if no money
+    const experience = userData.experience || 0; // Default to 0 if no experience
+
     return (
         <div>
             <NavBar />
@@ -104,18 +108,20 @@ const Profile = () => {
                 <div className="profile-info">
                     <p><strong>Username:</strong> {userData.username}</p>
                     <p><strong>Email:</strong> {userData.email}</p>
-                    <p><strong>Money:</strong> {userData.currencies.money}</p>
-                    <p><strong>Experience:</strong> {userData.experience} XP</p>
+                    <p><strong>Money:</strong> {money}</p>
+                    <p><strong>Experience:</strong> {experience} XP</p>
                     <p><strong>Level:</strong> {level}</p>
                     <p><strong>Sign Up Date:</strong> {formattedSignUpDate}</p>
                 </div>
 
-                <div className="experience-bar-container">
-                    <div className="experience-bar" style={{ width: `${progress}%` }}>
-                        <span>{Math.round(progress)}%</span>
+                {experience > 0 && (
+                    <div className="experience-bar-container">
+                        <div className="experience-bar" style={{ width: `${progress}%` }}>
+                            <span>{Math.round(progress)}%</span>
+                        </div>
+                        <p>{experience - currentLevelExp} / {nextLevelExp - currentLevelExp} XP to next level</p>
                     </div>
-                    <p>{userData.experience - currentLevelExp} / {nextLevelExp - currentLevelExp} XP to next level</p>
-                </div>
+                )}
             </div>
         </div>
     );
