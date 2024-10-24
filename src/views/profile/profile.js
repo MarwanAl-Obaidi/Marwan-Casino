@@ -84,6 +84,15 @@ const Profile = () => {
 
     const { level, progress, nextLevelExp, currentLevelExp } = calculateLevel(userData.experience || 0);
 
+    // Format signUpDate
+    const formattedSignUpDate = userData.signUpDate
+        ? new Date(userData.signUpDate).toLocaleString('en-FI', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: true
+        })
+        : "N/A";
+
     return (
         <div>
             <NavBar />
@@ -98,6 +107,7 @@ const Profile = () => {
                     <p><strong>Money:</strong> {userData.currencies.money}</p>
                     <p><strong>Experience:</strong> {userData.experience} XP</p>
                     <p><strong>Level:</strong> {level}</p>
+                    <p><strong>Sign Up Date:</strong> {formattedSignUpDate}</p>
                 </div>
 
                 <div className="experience-bar-container">

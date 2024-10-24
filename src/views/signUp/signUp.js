@@ -31,6 +31,7 @@ export default function SignUp() {
                 uid: user.uid,
                 email: user.email,
                 username: username,
+                signUpDate: new Date().toISOString(), // Store the current date and time
             };
 
             // Attempt to store the data in Firestore
