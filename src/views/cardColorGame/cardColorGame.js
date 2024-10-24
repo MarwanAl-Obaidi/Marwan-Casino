@@ -10,12 +10,14 @@ const CardColorGame = () => {
     const [targetColor, setTargetColor] = useState('');
     const [message, setMessage] = useState('');
     const [userMoney, setUserMoney] = useState(null); // User's money state
+    const [userExperience, setUserExperience] = useState(null); // User's experience state
     const [betAmount, setBetAmount] = useState(10); // Default bet amount
 
     const auth = getAuth();
     const db = getFirestore();
 
-    const fetchUserMoney = useCallback(async () => {
+    // Fetch user money and experience from Firestore
+    const fetchUserData = useCallback(async () => {
         if (!auth.currentUser) {
             console.log("User is not logged in");
             return;
@@ -33,18 +35,25 @@ const CardColorGame = () => {
                 } else {
                     setUserMoney(0); // Default to 0 if no money exists
                 }
+
+                // Fetch experience or default to 0
+                if (userData.experience !== undefined) {
+                    setUserExperience(userData.experience);
+                } else {
+                    setUserExperience(0);
+                }
             } else {
                 console.log("User document does not exist");
             }
         } catch (error) {
-            console.error("Error fetching money: ", error);
+            console.error("Error fetching user data: ", error);
         }
     }, [auth, db]);
 
     useEffect(() => {
-        fetchUserMoney();
+        fetchUserData();
         generateCardColor(); // Generate the initial card color
-    }, [fetchUserMoney]);
+    }, [fetchUserData]);
 
     const generateCardColor = () => {
         const randomIndex = Math.floor(Math.random() * cardColors.length);
@@ -53,8 +62,8 @@ const CardColorGame = () => {
     };
 
     const handleGuess = async (color) => {
-        if (userMoney === null) {
-            alert("Loading user balance, please wait.");
+        if (userMoney === null || userExperience === null) {
+            alert("Loading user data, please wait.");
             return;
         }
 
@@ -65,7 +74,10 @@ const CardColorGame = () => {
         }
 
         const newMoney = userMoney - betAmount; // Deduct the bet amount
-        setUserMoney(newMoney); // Update local state
+        let experienceGain = 10; // Default experience gain for loss
+
+        // Update local state for money
+        setUserMoney(newMoney);
 
         // Update user's money in Firestore
         const userId = auth.currentUser.uid; // Get user UID
@@ -86,19 +98,36 @@ const CardColorGame = () => {
             const updatedMoney = newMoney + winnings; // Update money with winnings
             setUserMoney(updatedMoney); // Update local state
 
-            // Update user's money in Firestore
+            // Increase experience for winning
+            experienceGain = 50;
+
+            // Update user's money and experience in Firestore after win
             try {
                 await updateDoc(userDocRef, {
-                    'currencies.money': updatedMoney
+                    'currencies.money': updatedMoney,
+                    experience: userExperience + experienceGain
                 });
             } catch (error) {
-                console.error("Error updating money after win: ", error);
+                console.error("Error updating money and experience after win: ", error);
             }
         } else {
             setMessage(`Wrong! The card was ${targetColor}. You lost your bet of ${betAmount}.`);
+
+            // Update user's experience in Firestore after loss
+            try {
+                await updateDoc(userDocRef, {
+                    experience: userExperience + experienceGain
+                });
+            } catch (error) {
+                console.error("Error updating experience after loss: ", error);
+            }
         }
 
-        generateCardColor(); // Generate a new card color for the next round
+        // Update experience state locally
+        setUserExperience(userExperience + experienceGain);
+
+        // Generate a new card color for the next round
+        generateCardColor();
     };
 
     return (
